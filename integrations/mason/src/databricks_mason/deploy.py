@@ -148,7 +148,13 @@ def _ensure_memory_store(client, display_name: str) -> dict:
             raise
     store = _resolve_memory_store(client, display_name)
     if store is None:
-        raise AgentCliError(f"Memory store '{display_name}' exists but could not be resolved.")
+        # create said the name is taken, but it isn't in the caller's own list — memory stores are
+        # listed per owner, so this is almost always a name owned by another user.
+        raise AgentCliError(
+            f"Memory store name '{display_name}' is already taken but isn't one of yours.",
+            hint="Memory store names are workspace-unique; another user likely owns this one. "
+            "Choose a different --with-memory-store name, or pass a store id you own.",
+        )
     return store
 
 

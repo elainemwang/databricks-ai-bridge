@@ -289,6 +289,20 @@ def test_resolve_memory_store_returns_none_when_absent():
     assert deploy_mod._resolve_memory_store(_EmptyClient(), "nope") is None
 
 
+def test_ensure_memory_store_explains_name_taken_by_another_owner():
+    # create says ALREADY_EXISTS but the store isn't in the caller's own list (owned by someone
+    # else) -> the error must say the name is taken by another user, not the opaque old message.
+    client = mock.Mock()
+    client.create_memory_store.side_effect = AgentCliError("exists", error_code="ALREADY_EXISTS")
+    client.list_memory_stores.return_value = {"managed_memory_stores": [], "next_page_token": ""}
+    try:
+        deploy_mod._ensure_memory_store(client, "taken-by-someone-else")
+        raise AssertionError("expected AgentCliError")
+    except AgentCliError as exc:
+        assert "already taken" in str(exc)
+        assert "another user" in (exc.hint or "")
+
+
 def test_memory_store_database_resolves_by_display_name():
     # The grant step derives the Lakebase db from the store; it must resolve by display name
     # (list+match), not get_memory_store (by id), or it 404s on the deploy flag's value.
