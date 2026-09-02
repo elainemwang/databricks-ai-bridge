@@ -40,19 +40,25 @@ _TEMPLATES: dict[str, dict[str, str]] = {
         "ref": "main",
         "path": "integrations/mason/templates/agent-langgraph",
     },
+    "vanilla": {
+        "repo": "https://github.com/databricks/databricks-ai-bridge.git",
+        "ref": "main",
+        "path": "integrations/mason/templates/agent-vanilla",
+    },
 }
 
 # Frameworks whose template lives in this repo and is released in lockstep with the CLI: a scaffold
 # they produce pins `databricks-mason[runtime]` at this package's version, so init fetches the
 # template tagged for the installed CLI (see `_template_ref`) rather than `main`. That keeps a
 # user's scaffold from outrunning the `databricks-mason` they have installed.
-_VERSIONED_TEMPLATES = frozenset({"langgraph"})
+_VERSIONED_TEMPLATES = frozenset({"langgraph", "vanilla"})
 
 # The release workflow tags each published version `databricks-mason-v<version>`.
 _RELEASE_TAG_PREFIX = "databricks-mason-v"
 
 _CHAT_APP_TEMPLATES = {
     "langgraph": "integrations/mason/templates/ui/agent-langgraph",
+    "vanilla": "integrations/mason/templates/ui/agent-vanilla",
 }
 
 

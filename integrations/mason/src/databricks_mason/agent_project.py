@@ -17,7 +17,7 @@ from tomlkit.exceptions import ParseError
 from databricks_mason.errors import AgentCliError
 
 _SCHEMA_VERSION = 1
-_SUPPORTED_FRAMEWORKS = {"langgraph", "openai"}
+_SUPPORTED_FRAMEWORKS = {"langgraph", "openai", "vanilla"}
 _SUPPORTED_SCOPE_KINDS = {"table", "volume", "workspace"}
 _SUPPORTED_PERMISSIONS = {"read_only", "read_write"}
 _TOOL_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")

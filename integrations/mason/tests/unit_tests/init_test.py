@@ -182,6 +182,42 @@ def test_init_langgraph_fetches_from_ai_bridge(tmp_path: pathlib.Path):
     assert fetched.call_args.args[2] == "integrations/mason/templates/agent-langgraph"
 
 
+def test_init_vanilla_fetches_from_ai_bridge(tmp_path: pathlib.Path):
+    dest = tmp_path / "van"
+
+    def fake_fetch(repo, ref, template_path, target, overlay_dirs=()):
+        target.mkdir(parents=True)
+
+    with mock.patch.object(init_mod, "_fetch_template", side_effect=fake_fetch) as fetched:
+        result = CliRunner().invoke(
+            init_mod.init, ["--framework", "vanilla", str(dest)], obj=_Ctx()
+        )
+    assert result.exit_code == 0, result.output
+    # vanilla pulls the nested template from the ai-bridge repo, like langgraph
+    assert "databricks-ai-bridge" in fetched.call_args.args[0]
+    assert fetched.call_args.args[2] == "integrations/mason/templates/agent-vanilla"
+
+
+def test_init_vanilla_includes_chat_app_by_default(tmp_path: pathlib.Path):
+    dest = tmp_path / "van-chat"
+    with mock.patch.object(init_mod, "_fetch_template", side_effect=lambda *a: a[3].mkdir()) as f:
+        result = CliRunner().invoke(
+            init_mod.init,
+            ["--framework", "vanilla", str(dest)],
+            obj=_Ctx(),
+        )
+
+    assert result.exit_code == 0, result.output
+    assert f.call_args.args[4] == ("integrations/mason/templates/ui/agent-vanilla",)
+    assert "Chat app" in result.output
+
+
+def test_template_ref_pins_vanilla_to_release_tag(monkeypatch: pytest.MonkeyPatch):
+    # vanilla is released in lockstep with the CLI, so a released CLI fetches its version's tag.
+    monkeypatch.setattr(init_mod, "_installed_version", lambda _: "0.3.0")
+    assert init_mod._template_ref("vanilla") == "databricks-mason-v0.3.0"
+
+
 def test_init_repo_ref_override(tmp_path: pathlib.Path):
     dest = tmp_path / "ov"
     with mock.patch.object(init_mod, "_fetch_template", side_effect=lambda *a: a[3].mkdir()) as f:
