@@ -23,7 +23,21 @@ class _Ctx:
 # --- ML-69259 / 69247: deployment-name validation ---------------------------
 
 
-@pytest.mark.parametrize("bad", ["", "   ", "../../x", "a/b", "a b", "..", "with\ttab"])
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "",
+        "   ",
+        "../../x",
+        "a/b",
+        "a b",
+        "..",
+        "with\ttab",
+        "mason-foo_bar",  # underscore: rejected by Databricks Apps
+        "mason-Foo",  # uppercase: rejected by Databricks Apps
+        "mason-foo.bar",  # dot
+    ],
+)
 def test_validate_deployment_name_rejects_unsafe(bad):
     with pytest.raises(AgentCliError):
         deploy_mod._validate_deployment_name(bad)

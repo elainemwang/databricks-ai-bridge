@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 import time
 from typing import Any, Optional
 
@@ -37,6 +38,8 @@ _AGENT_COMPUTE_OUTPUT = ("App compute", "Agent compute")
 # Mason names every deployment `mason-<name>` so `deployments list` can filter to its own apps.
 _DEPLOYMENT_PREFIX = "mason-"
 _MAX_DEPLOYMENT_NAME_LEN = 30  # Databricks Apps name limit
+# Databricks Apps names allow only lowercase letters, digits, and hyphens.
+_APP_NAME_RE = re.compile(r"[a-z0-9-]+")
 
 
 # --- databricks CLI plumbing (the deployment runtime) -----------------------
@@ -80,17 +83,17 @@ def _app_compute_state(name: str, profile: Optional[str]) -> Optional[str]:
 
 
 def _validate_deployment_name(name: str) -> str:
-    """Reject an empty or unsafe deployment name before it reaches a URL / workspace path."""
-    if (
-        not (name or "").strip()
-        or name != name.strip()
-        or any(token in name for token in ("/", "\\", ".."))
-        or any(character.isspace() for character in name)
-    ):
+    """Reject a name Databricks Apps will refuse, before it reaches `apps create`.
+
+    Apps names must be lowercase letters, digits, and hyphens only — so enforce that charset here
+    rather than let a bad name (e.g. an underscore from a directory-derived default) fail deep in
+    the `databricks apps create` call with an opaque platform error.
+    """
+    if not _APP_NAME_RE.fullmatch(name or ""):
         raise AgentCliError(
             f"Invalid deployment name {name!r}.",
-            hint="Use a non-empty name of letters, digits, and hyphens "
-            "(no slashes, spaces, or '..').",
+            hint="Use lowercase letters, digits, and hyphens only (no underscores, uppercase, "
+            "spaces, or slashes).",
         )
     if len(name) > _MAX_DEPLOYMENT_NAME_LEN:
         raise AgentCliError(
