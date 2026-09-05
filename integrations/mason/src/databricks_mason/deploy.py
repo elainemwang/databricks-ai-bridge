@@ -341,6 +341,12 @@ def _grant_store_access(
     "current directory.",
 )
 @click.option(
+    "--profile",
+    "-p",
+    default=None,
+    help="~/.databrickscfg profile to deploy with (overrides the top-level `mason -p`).",
+)
+@click.option(
     "--with-traces",
     "traces_destination",
     default=None,
@@ -374,6 +380,7 @@ def deploy(
     obj,
     name,
     source,
+    profile,
     traces_destination,
     traces_experiment,
     pip_index_url,
@@ -392,6 +399,11 @@ def deploy(
     API clients must reuse a stable UUID in this cookie on every request:
       __Host-databricks-app-router=<uuid>
     """
+    # A deploy-level --profile overrides the top-level `mason -p`. Set it before obj.client() /
+    # obj.profile are read (the client is built lazily) so both the API client and the `databricks
+    # apps` calls target the chosen workspace.
+    if profile:
+        obj.profile = profile
     name = _prefixed_name(name)
     _validate_deployment_name(name)
     instance_args = _instance_args(instances)

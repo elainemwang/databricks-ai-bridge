@@ -140,6 +140,35 @@ def test_deploy_drives_sync_and_apps_deploy(tmp_path: pathlib.Path, monkeypatch)
     assert "AGENT_MEMORY_STORE" not in env
 
 
+def test_deploy_profile_flag_overrides_group_profile(tmp_path: pathlib.Path, monkeypatch):
+    # `mason deploy <name> -p <prof>` overrides the top-level `mason -p`, and the chosen profile
+    # flows to every `databricks apps` call.
+    src = tmp_path / "app"
+    src.mkdir()
+    (src / "app.yaml").write_text(yaml.safe_dump({"command": ["x"]}))
+
+    profiles: list = []
+    monkeypatch.setattr(deploy_mod, "_deployment_exists", lambda a, p: True)
+    monkeypatch.setattr(
+        deploy_mod,
+        "_databricks",
+        lambda args, profile, **kw: (
+            profiles.append(profile) or types.SimpleNamespace(returncode=0, stdout="", stderr="")
+        ),
+    )
+
+    ctx = _FakeCtx()
+    result = CliRunner().invoke(
+        deploy_mod.deploy,
+        ["myapp", "--source", str(src), "-p", "other-workspace"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert ctx.profile == "other-workspace"  # group profile "prof" overridden
+    assert profiles and all(p == "other-workspace" for p in profiles)
+
+
 def test_deploy_creates_with_instance_count(tmp_path: pathlib.Path, monkeypatch):
     src = tmp_path / "app"
     src.mkdir()
@@ -151,8 +180,10 @@ def test_deploy_creates_with_instance_count(tmp_path: pathlib.Path, monkeypatch)
     monkeypatch.setattr(
         deploy_mod,
         "_databricks",
-        lambda args, profile, **kwargs: calls.append((args, kwargs))
-        or types.SimpleNamespace(returncode=0, stdout="", stderr=""),
+        lambda args, profile, **kwargs: (
+            calls.append((args, kwargs))
+            or types.SimpleNamespace(returncode=0, stdout="", stderr="")
+        ),
     )
 
     result = CliRunner().invoke(
@@ -189,8 +220,10 @@ def test_deploy_updates_existing_instance_count(tmp_path: pathlib.Path, monkeypa
     monkeypatch.setattr(
         deploy_mod,
         "_databricks",
-        lambda args, profile, **kwargs: calls.append((args, kwargs))
-        or types.SimpleNamespace(returncode=0, stdout="", stderr=""),
+        lambda args, profile, **kwargs: (
+            calls.append((args, kwargs))
+            or types.SimpleNamespace(returncode=0, stdout="", stderr="")
+        ),
     )
 
     result = CliRunner().invoke(
