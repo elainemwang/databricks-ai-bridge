@@ -8,9 +8,10 @@ from typing import Any
 
 import click
 
-from databricks_mason import render, timefmt
+from databricks_mason import timefmt
+from databricks_mason.cli import render
+from databricks_mason.cli.render import field
 from databricks_mason.errors import AgentCliError
-from databricks_mason.render import field
 
 _BREADCRUMB = "Agent Memory"
 

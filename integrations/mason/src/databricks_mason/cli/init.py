@@ -20,8 +20,8 @@ from typing import Optional
 
 import click
 
-from databricks_mason import render
 from databricks_mason.agent_project import AgentProject, default_store_name
+from databricks_mason.cli import render
 from databricks_mason.errors import AgentCliError
 from databricks_mason.project_config import write_project_metadata
 
